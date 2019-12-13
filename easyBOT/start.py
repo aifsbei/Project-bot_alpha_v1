@@ -11,8 +11,10 @@ import ctypes
 #import foos
 import attack
 import navigation
+import repair
 import threading
 #import win32event
+import foos
 
 awareness = ctypes.c_int() # correcting DPI
 ctypes.windll.shcore.SetProcessDpiAwareness(2) # setting DPI to high
@@ -42,7 +44,7 @@ status = 'inactive'
 #        else:
 #            if fly_thread.is_alive():
 #                fly_thread.join()
-#    print(status, time.ctime())
+#    print(status, time.ctime())2
 
 
 class fly_thread_class(threading.Thread):
@@ -63,6 +65,21 @@ class attack_thread_class(threading.Thread):
         global status
         status = 'under attack'
         attack.attack()
+
+
+class repair_thread_class(threading.Thread):
+
+
+    def run(self):
+        global status
+        while True:
+            if repair.is_dead():
+                status = 'repairing'
+            else:
+                return
+            if status == 'repairing':
+                repair.repair()
+                status = 'inactive'
 
 
 def main():
@@ -86,7 +103,9 @@ def main():
 
 
     while True:
-        image = ImageGrab.grab()
+#        image = ImageGrab.grab()
+        repair_thread = repair_thread_class(daemon=True)
+        repair_thread.start()
         if status == 'inactive':
     #        print(status)
             fly_thread = fly_thread_class(daemon=True)
@@ -107,6 +126,14 @@ def main():
     #        print(status)
             fly_thread = fly_thread_class(daemon=True)
             fly_thread.start()
+        elif status == 'repairing':
+            if attack_thread.is_alive() is True:
+                stop_signal.set()
+                attack_thread.join()
+                if fly_thread.is_alive() is True:
+                    stop_signal.set()
+                    fly_thread.join()
+
         print(status)
 
 

@@ -1,0 +1,7 @@
+name = input()
+surname = input()
+animal = input()
+horoscope_sign = input()
+print('Индивидуальный гороскоп для пользователя', name, surname)
+print('Кем вы были в прошлой жизни:', animal)
+print('Ваш знак зодиака - ', horoscope_sign, ', поэтому вы - тонко чувствующая натура.')

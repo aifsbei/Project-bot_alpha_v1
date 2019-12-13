@@ -1,0 +1,1 @@
+#print True if [any(item[i][j] == 0 for i in ite)]
