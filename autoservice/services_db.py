@@ -17,3 +17,9 @@ class Services:
         DBconnect.cursor.execute('SELECT * FROM services')
         row = DBconnect.cursor.fetchall()
         return row
+
+    def get_service_name_via_id(self, service_id):
+        service_id = str(service_id)
+        DBconnect.cursor.execute('SELECT * FROM services where id_service = ' + service_id)
+        row = DBconnect.cursor.fetchone()
+        return row[1]

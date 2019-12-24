@@ -6,6 +6,7 @@ import run
 #import main
 from not_portable_launcher import NotPortableLauncher
 from constants import *
+import hashlib
 
 
 def login(ents, errlabel):
@@ -19,6 +20,8 @@ def login(ents, errlabel):
         return
     users = Users()
     admins = Admins()
+    password = hashlib.md5((password + salt).encode()) ##############
+    password = password.hexdigest()
     if admins.find(username, password) is not None:
         errlabel.config(text='')
         set_next_process('admin_screen.py')
@@ -56,6 +59,8 @@ def registration(ents, errlabel):
 #        print('пароли не совпадают!')
         return
     else:
+        password = hashlib.md5((password + salt).encode()) ##############
+        password = password.hexdigest()
         users = Users()
         if users.is_unque(username):
             users.append_table(username, password)

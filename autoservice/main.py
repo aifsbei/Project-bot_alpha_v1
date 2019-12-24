@@ -7,6 +7,7 @@ import re
 from tkinter.messagebox import showerror
 from functools import partial
 import random
+import tkinter.messagebox
 
 
 ###constants###
@@ -15,6 +16,10 @@ personality_confirmed = False
 
 def create_services_frame():
     global services_frame
+    try:
+        services_frame.destroy()
+    except NameError:
+        pass
     services_frame = Frame(f1)
     services_frame.config(bg=inner_background)
     Label(services_frame, text='This autoservice provides the\nfollowing services*:',
@@ -69,9 +74,11 @@ def create_address_combo():
 
 
 def on_btn_confirm_service_click(treeview):
+    create_checkout_tab(f2)
     nb.tab(1, state='normal')
     nb.select(f2)
-    print(treeview.selection())
+    print(treeview.item(tree.focus())['values'][0])
+    set_service_id(str(treeview.item(tree.focus())['values'][0]))
 
 
 def create_city_combo():
@@ -102,7 +109,7 @@ def create_general_tab(frame):
     create_city_combo()
 
 
-def create_profile_tab(frame):
+def create_profile_tab(parent):
 
     def update_clientdata():
         clientdata = mc.get_clientdata()
@@ -113,8 +120,39 @@ def create_profile_tab(frame):
         set_profile_dialog_negative()
         update_clientdata()
 
+    def on_add_card_click():
+        global card_frame
+        mc.add_card(get_username())
+        frame.destroy()
+        create_profile_tab(parent)
+        create_card_info()
+
+    def create_card_info():
+        card = mc.get_membership_card(get_username())
+        level = None
+        if card[1] < 10:
+            level = 'Bronze'
+        elif 10 < card[1] < 15:
+            level = 'Silver'
+        elif 15 < card[1] < 20:
+            level = 'Gold'
+        elif 20 < card[1] <= 25:
+            level = 'Platinum'
+        try:
+            Label(card_frame, text='Your card level is: ' + level + '\nCurrent discount is ' + str(card[1]) + '%', bg=inner_background, fg=forecolor, font='times 14').pack(side=TOP, fill=X)
+        except TclError:
+            print('its k')
+        Label(card_frame, text='You need spend ' + str(25000 - card[2] % 25000) + ' more roubles with your membership\ncard to improve your level', bg=inner_background, fg=forecolor, justify=LEFT).pack(anchor=NW, fill=Y)
+        if card[3] is not None:
+            Label(card_frame, text='last purchase: ' + str(card[3]), bg=inner_background, fg=forecolor).pack(anchor=NW, fill=Y)
+        else:
+            Label(card_frame, text='You haven`t got recent purchases yet', bg=inner_background, fg=forecolor).pack(anchor=NW, fill=Y)
+
 
     mc.on_profile_open()
+    frame = Frame(parent, bg=inner_background)
+    frame.pack(side=TOP, expand=YES, fill=BOTH, padx=pad, pady=pad)
+    Label(frame, text='Your Profile data: ', bg=inner_background, fg=forecolor, font='times 14').pack(side=TOP)
     clientdata = mc.get_clientdata()
     print(clientdata)
     values = []
@@ -127,7 +165,15 @@ def create_profile_tab(frame):
         value.set(clientdata[ix + 1])
         values.append(value)
     edit_btn = Button(frame, text='Edit', bg=inner_background, fg=forecolor, command=on_edit_btn_click)
-    edit_btn.pack(anchor=SE, padx=pad, pady=pad)
+    edit_btn.pack(anchor=SE, padx=pad, pady=pad, fill=X)
+    card_frame = Frame(frame, bg=inner_background)
+    card_frame.pack(side=TOP, fill=BOTH)
+    if mc.get_membership_card(get_username()) is None:
+        Label(card_frame, text='Sorry, but You haven`t got\n a Membership card yet!', bg=inner_background, fg=forecolor, font='times 12').pack(side=TOP, fill=X)
+        add_cart = Button(card_frame, text='\u2795 Click here to Add membership card', bg=inner_background, fg=blue_fore, relief=RIDGE, bd=0, cursor='hand2', command=on_add_card_click)
+        add_cart.pack(side=TOP)
+    else:
+        create_card_info()
 
 
 def set_profile_dialog_negative():
@@ -172,7 +218,7 @@ def set_profile_dialog_positive():
     ent.pack(side=TOP, padx=pad, pady=pad, fill=X)
     btn = Button(win, text='Confirm', command=on_btn_click, bg=backgroundcolor, fg=forecolor)
     btn.pack(side=BOTTOM, fill=X, padx=pad, pady=pad)
-    win.protocol('WM_DELETE_WINDOW', on_btn_click)
+    win.protocol('WM_DELETE_WINDOW', lambda: sys.exit())
     win.focus_set()
     win.grab_set()
     center_obj(win)
@@ -198,6 +244,7 @@ def create_car_tab(frame):
 
         def on_btn_click():
             mc.add_car(ent, get_username())
+            create_checkout_tab(f2)
             win.quit()
 
         win = Toplevel(bg=backgroundcolor)
@@ -212,9 +259,9 @@ def create_car_tab(frame):
         win.destroy()
         cars_frame.destroy()
         create_car_info()
+#        f2.update()
 
     def create_car_info():
-
 
         def on_btn_del_car_click(btn):
             for index, it in enumerate(del_btns):
@@ -223,6 +270,7 @@ def create_car_tab(frame):
                     mc.remove_car(cars_info[index][0])
                     cars_frame.destroy()
                     create_car_info()
+            create_checkout_tab(f2)
 
         global cars_frame
         cars_info = mc.get_cars(get_username())
@@ -247,7 +295,8 @@ def create_car_tab(frame):
     add_car_btn.pack(side=TOP, fill=X, padx=pad, pady=pad)
     create_car_info()
 
-def create_checkout_tab(frame):
+
+def create_checkout_tab(parent):
 
     def on_car_change(index, value, op):
         try:
@@ -257,7 +306,13 @@ def create_checkout_tab(frame):
         create_workers_info(None)
 
     def create_car_box():
-        global car_box_value
+        global car_box_value, car_box, frame
+        try:
+            frame.destroy()
+        except NameError:
+            print('wtf?')
+        frame = Frame(parent, bg=inner_background)
+        frame.pack(side=TOP, expand=YES, fill=BOTH)
         car_box_value = StringVar()
         car_box = ttk.Combobox(frame, textvariable=car_box_value, state='readonly')
         mc.set_cars_combobox(car_box, get_username())
@@ -265,7 +320,6 @@ def create_checkout_tab(frame):
         car_box.set('Select your car...')
         car_box_value.trace('w', on_car_change)
         car_box.pack(side=TOP, padx=pad, pady=pad, fill=X)
-
 
     def on_change_worker_click():
         global worker_index, list_of_workers
@@ -283,18 +337,31 @@ def create_checkout_tab(frame):
             pass
         create_workers_info(worker_index)
 
-
+    def on_appoint_btn_click():
+        global car_box_value, worker_index, current_worker_data
+        number = car_box_value.get().split(' - ')[0]
+        print(number)
+        mc.appoint(number, current_worker_data[0])
 
     def create_workers_info(set_none_to_random):
-        global workers_frame, worker_index, list_of_workers
+        global workers_frame, worker_index, list_of_workers, current_worker_data
         workers_frame = Frame(frame, bg=inner_background)
         workers_frame.pack(side=TOP, fill=X, padx=pad, pady=pad)
-        Label(workers_frame, text="Your worker is: ", bg=inner_background, fg=forecolor, font='times 14').pack(side=TOP, fill=X)
-        list_of_workers = [value for value in mc.get_workers_data()]
+        varlabel = Label(workers_frame, text="Your worker is: ", bg=inner_background, fg=forecolor, font='times 14', justify=LEFT)
+        varlabel.pack(side=TOP, fill=X)
+        try:
+            list_of_workers = [value for value in mc.get_workers_data()]
+        except IndexError:
+            varlabel.config(text='No workers that could provide your service.\nPlease, change address. ')
+            return
         if set_none_to_random is not None:
             worker_index = set_none_to_random
         else:
-            worker_index = random.randint(0, len(list_of_workers) - 1)
+            try:
+                worker_index = random.randint(0, len(list_of_workers) - 1)
+            except ValueError:
+                varlabel.config(text='No workers that could provide your service.\nPlease, change address. ')
+                return
         current_worker_data = list_of_workers[worker_index]
         for ix, field in enumerate(worker_fields):
             row = Frame(workers_frame, bg=inner_background)
@@ -306,6 +373,7 @@ def create_checkout_tab(frame):
         change_worker_btn = Button(one_more_row, text='Click here to change worker', bg=inner_background, fg=blue_fore, relief=RIDGE, bd=0, cursor='hand2')
         change_worker_btn.pack(side=RIGHT, fill=X, padx=pad, pady=pad)
         change_worker_btn.config(command=on_change_worker_click, font=('times', 12, 'underline'))
+        Button(workers_frame, text='Confirm', bg=inner_background, fg=forecolor, command=on_appoint_btn_click).pack(anchor=SE, padx=pad, pady=pad)
 
     create_car_box()
 

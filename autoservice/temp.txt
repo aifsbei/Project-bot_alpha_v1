@@ -1,7 +1,8 @@
 None
-auto
-Украинская, 15
-Нижний Новгород
+ara
+Стромынка, 20к1
+Москва
 Autoservice
 postgres
 F29cHZGh
+4

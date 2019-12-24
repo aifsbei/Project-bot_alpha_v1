@@ -3,9 +3,12 @@ from tkinter import ttk
 import sys
 import re
 from tkinter import *
+import datetime
+from datetime import timedelta
 
 makemodal = (len(sys.argv) > 1)
 pad = 5
+salt = 'j2h4k3ht9f230j'
 bullet = '\u2022'
 forecolor = 'white smoke'
 blue_fore = 'dodger blue'
@@ -236,6 +239,42 @@ def get_db_password():
         return rows[6][:-1]
     else:
         return rows[6]
+
+
+def get_service_id():
+    f = open('temp.txt', 'r')
+    rows = f.readlines()
+    f.close()
+    if rows[7][-1] == '\n':
+        return rows[7][:-1]
+    else:
+        return rows[7]
+
+
+def set_service_id(service):
+    f = open('temp.txt', 'r')
+    rows = f.readlines()
+    try:
+        rows[7] = service
+    except IndexError:
+        rows.append(service)
+    f.close()
+    f = open('temp.txt', 'w')
+    for item in rows:
+        if item[-1] != '\n':
+            item += '\n'
+        f.write(item)
+    f.close()
+
+def get_date():
+    d = datetime.date.today()
+    return str(d.day) + '-' + str(d.month) + '-' + str(d.year)
+
+def get_next_week_date():
+    d = datetime.date.today()
+    week = timedelta(7)
+    d = d + week
+    return str(d.day) + '-' + str(d.month) + '-' + str(d.year)
 
 
 class LabeledEntry(tk.Entry):

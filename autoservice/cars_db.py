@@ -22,6 +22,11 @@ class Cars:
         rows = DBconnect.cursor.fetchall()
         return rows
 
+    def get_car(self, registration_plate):
+        DBconnect.cursor.execute('SELECT * FROM cars WHERE registration_plate=' + registration_plate + ';')
+        rows = DBconnect.cursor.fetchone()
+        return rows
+
     def remove_car(self, registration_plate):
         registration_plate = "'" + registration_plate + "'"
         DBconnect.cursor.execute('DELETE FROM cars WHERE registration_plate=' + registration_plate + ';')

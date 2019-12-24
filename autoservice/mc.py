@@ -4,17 +4,64 @@ from users_db import Users
 from clients_db import Clients
 from cars_db import Cars
 from workers_db import Workers
+from membership_cards_db import Membership_cards
+from appointments_db import Appointments
+from orders_db import Orders
 from tkinter import ttk
 from tkinter import *
 from tkinter.messagebox import askyesno, showerror
 from constants import *
 from main import set_profile_dialog_negative, set_profile_dialog_positive
+import tkinter.messagebox
+import datetime
+from datetime import timedelta
 
+
+def appoint(car, worker_id):
+    week = timedelta(7)
+    service = Services().get_service_name_via_id(get_service_id())
+    print(service, car, get_next_week_date())
+    answer = tkinter.messagebox.askyesno(title='Confirm your order', message='Услуга ' + service + ' над Вашим автомобилем ' + car + ' будет произведена через неделю (' + get_next_week_date() + '). Подтвердить заказ? ')
+    if answer is True:
+        client_id = Users().get_client_id(get_username())
+        autoservice_id = Autoservice_location().get_autoservice_id(get_city(), get_address())
+        appointment = Appointments()
+        appointment.set(car, client_id, get_date(), autoservice_id)
+        order = Orders()
+        order.set(get_next_week_date(), worker_id, get_service_id(), car, client_id)
+        cont = tkinter.messagebox.showinfo(title='Success!', message='Вы были успешно записаны в автосервис!')
+        if cont:
+            set_next_process('main.py')
+            sys.exit()
+
+def add_card(username):
+    users = Users()
+    client_id = users.get_client_id(username)
+    if client_id is None:
+        return None
+    cards = Membership_cards()
+    cards.add(client_id, get_date())
+
+
+def get_membership_card(username):
+    users = Users()
+    client_id = users.get_client_id(username)
+    if client_id is None:
+        return None
+    cards = Membership_cards()
+    card = cards.find_my_card(client_id)
+    return card
+
+
+def update_tab(frame, function):
+    frame.destroy()
+    function()
 
 def get_workers_data():
     workers = Workers()
     autoservice = Autoservice_location()
     autoservice_id = autoservice.get_autoservice_id(get_city(), get_address())
+    print(workers.get_workers(autoservice_id))
     return workers.get_workers(autoservice_id)
 
 
@@ -78,6 +125,8 @@ def restore_clientdata(call_number):
         return
     users = Users()
     users.update_fk_client_id(id_clients, get_username())
+    set_next_process('main.py')
+    sys.exit()
 
 
 def on_profile_open():
